@@ -1,244 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dark War: Survival - Precision Parts Calculator</title>
+    <title>DW Survival - Alliance Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: #e2e8f0; }
+        body { background-color: #0b0f1a; color: #e2e8f0; }
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(23, 32, 51, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s ease;
         }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
-            -webkit-appearance: none; margin: 0;
+        .glass-card:hover { transform: translateY(-5px); border-color: rgba(251, 191, 36, 0.3); }
+        .tier-badge {
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
         }
     </style>
 </head>
-<body class="min-h-screen py-10 px-4">
+<body class="py-10 px-4">
 
-    <div class="max-w-2xl mx-auto">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-amber-500 uppercase tracking-widest">Precision Parts Tool</h1>
-            <p class="text-slate-400 mt-2">Kalkulator Kebutuhan Upgrade Dark War: Survival</p>
-        </div>
-
-        <div class="glass-card rounded-2xl p-6 shadow-2xl">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Current Level (Level Sekarang)</label>
-                        <input type="number" id="currLvl" value="1" min="1" max="30" 
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Target Level</label>
-                        <input type="number" id="targetLvl" value="30" min="1" max="30" 
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Current Stock (Stok di Tas)</label>
-                        <input type="number" id="stock" value="0" 
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all">
-                    </div>
-                </div>
-
-                <div class="bg-slate-900/50 rounded-xl p-6 border border-slate-800 flex flex-col justify-center">
-                    <div class="text-center">
-                        <span class="text-slate-400 text-sm uppercase tracking-wider">Total Required</span>
-                        <div id="totalResult" class="text-4xl font-black text-amber-500 my-2">0</div>
-                        <div class="h-px bg-slate-800 my-4"></div>
-                        <span class="text-slate-400 text-sm uppercase tracking-wider">Remaining to Farm</span>
-                        <div id="remResult" class="text-2xl font-bold text-rose-500 mt-1">0</div>
-                    </div>
-                </div>
-
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-end mb-10">
+            <div>
+                <h1 class="text-4xl font-black text-amber-500 tracking-tighter uppercase italic">Alliance Tracker</h1>
+                <p class="text-slate-500 font-medium">Dark War: Survival Division</p>
             </div>
-
-            <div class="mt-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                <p class="text-xs text-amber-200/70 leading-relaxed">
-                    *Data ini merupakan estimasi berdasarkan kurva pertumbuhan biaya Precision Parts. 
-                    Pastikan untuk selalu mengecek ketersediaan material sebelum melakukan upgrade besar.
-                </p>
+            <div class="text-right">
+                <span class="text-xs text-slate-500 uppercase block">Last Update</span>
+                <span class="text-sm font-bold text-slate-300">April 2026</span>
             </div>
         </div>
 
-        <div class="text-center mt-10 text-slate-500 text-sm">
-            Developed for <span class="text-slate-300">DW Community</span> &bull; 2026
-        </div>
+        <div id="memberList" class="grid grid-cols-1 gap-6">
+            </div>
     </div>
 
     <script>
-        // Data Simulasi Biaya per Level (Array Index 1 = biaya dari lvl 1 ke 2)
-        // Kamu bisa sesuaikan angka di bawah ini dengan data asli di game
-        const costData = {
-            1: 100, 2: 200, 3: 400, 4: 800, 5: 1500, 
-            6: 2500, 7: 4000, 8: 6500, 9: 10000, 10: 15000,
-            11: 22000, 12: 30000, 13: 45000, 14: 60000, 15: 85000,
-            16: 110000, 17: 150000, 18: 200000, 19: 280000, 20: 380000,
-            21: 500000, 22: 650000, 23: 850000, 24: 1100000, 25: 1400000,
-            26: 1800000, 27: 2300000, 28: 3000000, 29: 4000000, 30: 5500000
-        };
-
-        const currInput = document.getElementById('currLvl');
-        const targetInput = document.getElementById('targetLvl');
-        const stockInput = document.getElementById('stock');
-        const totalDisplay = document.getElementById('totalResult');
-        const remDisplay = document.getElementById('remResult');
-
-        function calculate() {
-            let current = parseInt(currInput.value) || 0;
-            let target = parseInt(targetInput.value) || 0;
-            let stock = parseInt(stockInput.value) || 0;
-            let totalNeeded = 0;
-
-            // Logika Penjumlahan Biaya
-            if (target > current) {
-                for (let i = current; i < target; i++) {
-                    totalNeeded += costData[i] || 0;
-                }
+        // DATA MEMBER DARK WAR: SURVIVAL
+        // Silakan edit bagian ini untuk merubah data member kamu
+        const membersData = [
+            {
+                rank: 1,
+                name: "Vortex_Leader",
+                th: "30",
+                tier: "i3",
+                power: "85.4M",
+                growth: "+1.2M",
+                kp: "250.5M",
+                dead: "450.2K",
+                dkp: "254.8M",
+                status: "MVP"
+            },
+            {
+                rank: 2,
+                name: "Shadow_Hunter",
+                th: "28",
+                tier: "i2",
+                power: "62.1M",
+                growth: "+800K",
+                kp: "180.2M",
+                dead: "310.5K",
+                dkp: "183.3M",
+                status: "General"
+            },
+            {
+                rank: 3,
+                name: "Iron_Shield",
+                th: "25",
+                tier: "T10",
+                power: "45.8M",
+                growth: "-2.1M", // Power turun karena pasukan banyak yang mati
+                kp: "95.4M",
+                dead: "520.0K",
+                dkp: "100.6M",
+                status: "Fighter"
             }
+        ];
 
-            let remaining = totalNeeded - stock;
-            if (remaining < 0) remaining = 0;
+        function render() {
+            const container = document.getElementById('memberList');
+            container.innerHTML = membersData.map(m => `
+                <div class="glass-card rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-4">
+                                <span class="text-4xl font-black text-slate-800/50 italic">#0${m.rank}</span>
+                                <div>
+                                    <h3 class="text-xl font-bold text-white tracking-tight">${m.name}</h3>
+                                    <div class="flex gap-2 mt-1">
+                                        <span class="bg-blue-900/40 text-blue-400 border border-blue-800 tier-badge">TH ${m.th}</span>
+                                        <span class="bg-purple-900/40 text-purple-400 border border-purple-800 tier-badge">${m.tier}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">${m.status}</span>
+                            </div>
+                        </div>
 
-            // Tampilkan dengan format ribuan (Locale String)
-            totalDisplay.innerText = totalNeeded.toLocaleString('en-US');
-            remDisplay.innerText = remaining.toLocaleString('en-US');
-        }
-
-        // Listener untuk update otomatis saat mengetik
-        [currInput, targetInput, stockInput].forEach(input => {
-            input.addEventListener('input', calculate);
-        });
-
-        // Jalankan kalkulasi pertama kali
-        calculate();
-    </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dark War: Survival - Precision Parts Calculator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #0f172a; color: #e2e8f0; }
-        .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
-            -webkit-appearance: none; margin: 0;
-        }
-    </style>
-</head>
-<body class="min-h-screen py-10 px-4">
-
-    <div class="max-w-2xl mx-auto">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-amber-500 uppercase tracking-widest">Precision Parts Tool</h1>
-            <p class="text-slate-400 mt-2">Kalkulator Kebutuhan Upgrade Dark War: Survival</p>
-        </div>
-
-        <div class="glass-card rounded-2xl p-6 shadow-2xl">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Current Level (Level Sekarang)</label>
-                        <input type="number" id="currLvl" value="1" min="1" max="30" 
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Target Level</label>
-                        <input type="number" id="targetLvl" value="30" min="1" max="30" 
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Current Stock (Stok di Tas)</label>
-                        <input type="number" id="stock" value="0" 
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <span class="text-[10px] uppercase font-bold text-slate-500 block mb-1">Power</span>
+                                <div class="text-xl font-bold">${m.power}</div>
+                                <span class="text-xs ${m.growth.includes('+') ? 'text-green-500' : 'text-red-500'} font-bold">${m.growth}</span>
+                            </div>
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <span class="text-[10px] uppercase font-bold text-slate-500 block mb-1">Kill Points</span>
+                                <div class="text-xl font-bold text-slate-100">${m.kp}</div>
+                            </div>
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <span class="text-[10px] uppercase font-bold text-slate-500 block mb-1">Dead Units</span>
+                                <div class="text-xl font-bold text-red-500">${m.dead}</div>
+                            </div>
+                            <div class="bg-amber-500/5 p-4 rounded-xl border border-amber-500/20">
+                                <span class="text-[10px] uppercase font-bold text-amber-500/80 block mb-1">DKP Score</span>
+                                <div class="text-2xl font-black text-amber-400">${m.dkp}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="bg-slate-900/50 rounded-xl p-6 border border-slate-800 flex flex-col justify-center">
-                    <div class="text-center">
-                        <span class="text-slate-400 text-sm uppercase tracking-wider">Total Required</span>
-                        <div id="totalResult" class="text-4xl font-black text-amber-500 my-2">0</div>
-                        <div class="h-px bg-slate-800 my-4"></div>
-                        <span class="text-slate-400 text-sm uppercase tracking-wider">Remaining to Farm</span>
-                        <div id="remResult" class="text-2xl font-bold text-rose-500 mt-1">0</div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="mt-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                <p class="text-xs text-amber-200/70 leading-relaxed">
-                    *Data ini merupakan estimasi berdasarkan kurva pertumbuhan biaya Precision Parts. 
-                    Pastikan untuk selalu mengecek ketersediaan material sebelum melakukan upgrade besar.
-                </p>
-            </div>
-        </div>
-
-        <div class="text-center mt-10 text-slate-500 text-sm">
-            Developed for <span class="text-slate-300">DW Community</span> &bull; 2026
-        </div>
-    </div>
-
-    <script>
-        // Data Simulasi Biaya per Level (Array Index 1 = biaya dari lvl 1 ke 2)
-        // Kamu bisa sesuaikan angka di bawah ini dengan data asli di game
-        const costData = {
-            1: 100, 2: 200, 3: 400, 4: 800, 5: 1500, 
-            6: 2500, 7: 4000, 8: 6500, 9: 10000, 10: 15000,
-            11: 22000, 12: 30000, 13: 45000, 14: 60000, 15: 85000,
-            16: 110000, 17: 150000, 18: 200000, 19: 280000, 20: 380000,
-            21: 500000, 22: 650000, 23: 850000, 24: 1100000, 25: 1400000,
-            26: 1800000, 27: 2300000, 28: 3000000, 29: 4000000, 30: 5500000
-        };
-
-        const currInput = document.getElementById('currLvl');
-        const targetInput = document.getElementById('targetLvl');
-        const stockInput = document.getElementById('stock');
-        const totalDisplay = document.getElementById('totalResult');
-        const remDisplay = document.getElementById('remResult');
-
-        function calculate() {
-            let current = parseInt(currInput.value) || 0;
-            let target = parseInt(targetInput.value) || 0;
-            let stock = parseInt(stockInput.value) || 0;
-            let totalNeeded = 0;
-
-            // Logika Penjumlahan Biaya
-            if (target > current) {
-                for (let i = current; i < target; i++) {
-                    totalNeeded += costData[i] || 0;
-                }
-            }
-
-            let remaining = totalNeeded - stock;
-            if (remaining < 0) remaining = 0;
-
-            // Tampilkan dengan format ribuan (Locale String)
-            totalDisplay.innerText = totalNeeded.toLocaleString('en-US');
-            remDisplay.innerText = remaining.toLocaleString('en-US');
+            `).join('');
         }
 
-        // Listener untuk update otomatis saat mengetik
-        [currInput, targetInput, stockInput].forEach(input => {
-            input.addEventListener('input', calculate);
-        });
-
-        // Jalankan kalkulasi pertama kali
-        calculate();
+        render();
     </script>
 </body>
 </html>
